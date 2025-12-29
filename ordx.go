@@ -53,7 +53,7 @@ func RankCmp[S ~[]E, E comparable](order S) func(a, b E) int {
 	m := make(map[E]int, len(order))
 	for i, v := range order {
 		if _, ok := m[v]; ok {
-			panic(fmt.Sprintf("ordx: duplicated element in order: %+v", v))
+			panic(fmt.Sprintf("ordx: duplicated element in order: '%+v'", v))
 		}
 		m[v] = i
 	}
@@ -63,9 +63,9 @@ func RankCmp[S ~[]E, E comparable](order S) func(a, b E) int {
 		bi, bok := m[b]
 		switch {
 		case !aok:
-			panic(fmt.Sprintf("ordx: unknown value: %+v", a))
+			panic(fmt.Sprintf("ordx: unknown value: '%+v'", a))
 		case !bok:
-			panic(fmt.Sprintf("ordx: unknown value: %+v", b))
+			panic(fmt.Sprintf("ordx: unknown value: '%+v'", b))
 		case ai == bi:
 			return 0
 		case ai < bi:
