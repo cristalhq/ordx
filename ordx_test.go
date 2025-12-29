@@ -207,3 +207,52 @@ func TestRankCmp(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkAsLess_Compare(b *testing.B) {
+	less := ordx.AsLess(intCmp)
+	a, c := 10, 20
+
+	for b.Loop() {
+		if !less(a, c) {
+			b.Fatal("not less")
+		}
+	}
+}
+
+func BenchmarkAsCmp_Compare(b *testing.B) {
+	cmp := ordx.AsCmp(intLess)
+	a, c := 10, 20
+
+	for b.Loop() {
+		if v := cmp(a, c); v != -1 {
+			b.Fatalf("have: %v", v)
+		}
+	}
+}
+
+func BenchmarkRankCmp_Compare(b *testing.B) {
+	order := []int{1, 2, 3, 4, 5}
+	cmp := ordx.RankCmp(order)
+
+	a, c := 2, 4
+	for b.Loop() {
+		if v := cmp(a, c); v != -1 {
+			b.Fatalf("have: %v", v)
+		}
+	}
+}
+
+func intCmp(a, b int) int {
+	switch {
+	case a < b:
+		return -1
+	case a > b:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func intLess(a, b int) bool {
+	return a < b
+}
