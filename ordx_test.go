@@ -1,6 +1,7 @@
 package ordx_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/cristalhq/ordx"
@@ -206,6 +207,100 @@ func TestRankCmp(t *testing.T) {
 			t.Fatalf("expected m > l")
 		}
 	})
+}
+
+func TestRankCmpSafe(t *testing.T) {
+	t.Run("Basic", func(t *testing.T) {
+		cmp, err := ordx.RankCmpSafe([]string{"low", "med", "high"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		tests := []struct {
+			a, b string
+			want int
+		}{
+			{"low", "low", 0},
+			{"low", "med", -1},
+			{"med", "low", 1},
+			{"med", "high", -1},
+			{"high", "med", 1},
+		}
+
+		for _, tt := range tests {
+			got := cmp(tt.a, tt.b)
+			if got != tt.want {
+				t.Errorf("cmp(%q, %q) = %d; want %d", tt.a, tt.b, got, tt.want)
+			}
+		}
+	})
+
+	t.Run("Duplicate", func(t *testing.T) {
+		_, err := ordx.RankCmpSafe([]string{"a", "b", "a"})
+		if err == nil {
+			t.Fatalf("expected error for duplicate elements, got nil")
+		}
+	})
+
+	t.Run("UnknownPanics_A", func(t *testing.T) {
+		cmp, err := ordx.RankCmpSafe([]string{"a", "b"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		defer func() {
+			if r := recover(); r == nil {
+				t.Fatalf("expected panic for unknown value")
+			}
+		}()
+
+		_ = cmp("a", "c")
+	})
+
+	t.Run("UnknownPanics_B", func(t *testing.T) {
+		cmp, err := ordx.RankCmpSafe([]string{"a", "b"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		defer func() {
+			if r := recover(); r == nil {
+				t.Fatalf("expected panic for unknown value")
+			}
+		}()
+
+		_ = cmp("c", "a")
+	})
+}
+
+func TestChainCmp_Lexicographic(t *testing.T) {
+	type User struct {
+		First string
+		Last  string
+	}
+
+	cmp := ordx.ChainCmp(
+		func(a, b User) int { return strings.Compare(a.Last, b.Last) },
+		func(a, b User) int { return strings.Compare(a.First, b.First) },
+	)
+
+	tests := []struct {
+		a, b User
+		want int
+	}{
+		{User{"John", "Doe"}, User{"John", "Doe"}, 0},
+		{User{"Alice", "Doe"}, User{"Bob", "Doe"}, -1}, // first name tiebreak
+		{User{"Bob", "Doe"}, User{"Alice", "Doe"}, 1},
+		{User{"John", "Adams"}, User{"John", "Doe"}, -1}, // last name primary
+		{User{"John", "Doe"}, User{"John", "Adams"}, 1},
+	}
+
+	for _, tt := range tests {
+		got := cmp(tt.a, tt.b)
+		if got != tt.want {
+			t.Errorf("cmp(%v, %v) = %d; want %d", tt.a, tt.b, got, tt.want)
+		}
+	}
 }
 
 func BenchmarkAsLess_Compare(b *testing.B) {
