@@ -16,14 +16,17 @@ func AsLess[T any](cmp func(T, T) int) func(T, T) bool {
 	}
 }
 
-// AsLess converts a three-way comparison function into a less function.
+// AsCmp converts a less function into a three-way comparison function.
 //
-// The provided cmp function must return:
+// The provided less function must define a strict weak ordering:
+//
+//   - less(a, b) is true if a < b
+//   - if neither less(a, b) nor less(b, a) is true, a and b are considered equal
+//
+// The returned function returns:
 //   - -1 if a < b
 //   - 0 if a == b
 //   - +1 if a > b
-//
-// The returned function reports whether a is strictly less than b.
 func AsCmp[T any](less func(T, T) bool) func(T, T) int {
 	return func(a, b T) int {
 		switch {
