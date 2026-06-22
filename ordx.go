@@ -2,6 +2,28 @@ package ordx
 
 import "fmt"
 
+// Order specifies whether values are sorted in ascending or descending order.
+type Order int
+
+const (
+	Asc  Order = 0 // Asc sorts values from lowest to highest.
+	Desc Order = 1 // Desc sorts values from highest to lowest.
+)
+
+// WithOrder returns a comparator that applies the specified ordering.
+//
+// When order is [Asc], cmp is returned unchanged.
+// When order is [Desc], the comparison is reversed.
+func WithOrder[T any](order Order, cmp func(T, T) int) func(T, T) int {
+	if order == Asc {
+		return cmp
+	}
+
+	return func(a, b T) int {
+		return cmp(b, a)
+	}
+}
+
 // AsLess converts a three-way comparison function into a less function.
 //
 // The provided cmp function must return:
@@ -13,6 +35,26 @@ import "fmt"
 func AsLess[T any](cmp func(T, T) int) func(T, T) bool {
 	return func(a, b T) bool {
 		return cmp(a, b) == -1
+	}
+}
+
+// AsLessWithOrder converts a three-way comparison function into a less function using the specified order.
+//
+// The provided cmp function must return:
+//
+//   - a negative value if a < b
+//   - zero if a == b
+//   - a positive value if a > b
+//
+// When order is [Asc], the returned function reports whether a is less than b.
+// When order is [Desc], it reports whether a is greater than b.
+func AsLessWithOrder[T any](order Order, cmp func(T, T) int) func(T, T) bool {
+	if order == Asc {
+		return AsLess(cmp)
+	}
+
+	return func(a, b T) bool {
+		return cmp(a, b) > 0
 	}
 }
 
